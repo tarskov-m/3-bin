@@ -2,17 +2,20 @@ package main
 
 import (
 	"fmt"
-	"myapp/bins"
 	"strings"
+
+	"myapp/bins"
+	"myapp/storage"
 )
 
 func main() {
 	name, private := inputUser()
 
 	bin := bins.NewBin(name, private)
+	storage.SaveBin(bin)
 
 	fmt.Printf("\nBin создан успешно!\n")
-	fmt.Printf("ID: %s\n", bin.Id)
+	fmt.Printf("ID: %s\n", bin.ID)
 	fmt.Printf("Имя: %s\n", bin.Name)
 	fmt.Printf("Приватный: %t\n", bin.Private)
 	fmt.Printf("Создан: %s\n", bin.CreatedAt.Format("2006-01-02 15:04:05"))

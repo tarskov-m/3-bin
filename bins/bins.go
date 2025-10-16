@@ -1,3 +1,6 @@
+// Package bins реализует функциональность для создания и управления
+// объектами Bin, представляющими собой контейнеры с уникальными
+// идентификаторами и возможностью установки приватности.
 package bins
 
 import (
@@ -6,7 +9,7 @@ import (
 )
 
 type Bin struct {
-	Id        string
+	ID        string
 	Name      string
 	Private   bool
 	CreatedAt time.Time
@@ -18,7 +21,7 @@ type BinList struct {
 
 func NewBin(name string, private bool) Bin {
 	return Bin{
-		Id:        generateID(),
+		ID:        generateID(),
 		Name:      name,
 		Private:   private,
 		CreatedAt: time.Now(),
