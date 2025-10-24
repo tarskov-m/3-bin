@@ -2,52 +2,64 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
-	"time"
+
+	"myapp/bins"
+	"myapp/file"
+	"myapp/storage"
 )
 
-type Bin struct {
-	Id        string
-	Name      string
-	Private   bool
-	CreatedAt time.Time
-}
-
-type BinList struct {
-	Bins []Bin
-}
-
-func NewBin(name string, private bool) Bin {
-	return Bin{
-		Id:        generateID(),
-		Name:      name,
-		Private:   private,
-		CreatedAt: time.Now(),
-	}
-}
-
-func generateID() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	const idLength = 8
-
-	b := make([]byte, idLength)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
-}
-
 func main() {
+	// Демонстрация использования интерфейсов для DI
+	// Создание экземпляров через интерфейсы
+	var storageService = storage.NewJSONStorage()
+	var fileReader = file.NewOSFileReader()
+	var binService = bins.NewBinService()
+
 	name, private := inputUser()
 
-	bin := NewBin(name, private)
+	// Использование BinService через интерфейс
+	bin := binService.CreateBin(name, private)
+
+	// Использование Storage через интерфейс
+	err := storageService.SaveBin(bin)
+	if err != nil {
+		fmt.Printf("Ошибка при сохранении: %v\n", err)
+		return
+	}
 
 	fmt.Printf("\nBin создан успешно!\n")
-	fmt.Printf("ID: %s\n", bin.Id)
+	fmt.Printf("ID: %s\n", bin.ID)
 	fmt.Printf("Имя: %s\n", bin.Name)
 	fmt.Printf("Приватный: %t\n", bin.Private)
 	fmt.Printf("Создан: %s\n", bin.CreatedAt.Format("2006-01-02 15:04:05"))
+
+	// Демонстрация использования FileReader через интерфейс
+	if fileReader.IsJSONFile("bins.json") {
+		fmt.Println("\nФайл bins.json является JSON файлом")
+	}
+
+	// Загрузка всех bins через интерфейс Storage
+	allBins, err := storageService.LoadBins()
+	if err != nil {
+		fmt.Printf("Ошибка при загрузке bins: %v\n", err)
+		return
+	}
+
+	fmt.Printf("\nВсего bins в хранилище: %d\n", len(allBins))
+
+	// Демонстрация обратной совместимости со старым API
+	fmt.Println("\n--- Демонстрация обратной совместимости ---")
+	legacyBin := bins.NewBin("legacy-bin", false)
+	fmt.Printf("Legacy bin создан: %s\n", legacyBin.Name)
+
+	// Демонстрация гибкости интерфейсов
+	fmt.Println("\n--- Демонстрация гибкости интерфейсов ---")
+	fmt.Println("Все сервисы работают через интерфейсы:")
+	fmt.Printf("- BinService: %T\n", binService)
+	fmt.Printf("- Storage: %T\n", storageService)
+	fmt.Printf("- FileReader: %T\n", fileReader)
+	fmt.Println("Это позволяет легко заменять реализации!")
 }
 
 func inputUser() (string, bool) {
