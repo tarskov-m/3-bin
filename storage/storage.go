@@ -7,12 +7,22 @@ import (
 	"path/filepath"
 
 	"myapp/bins"
+	"myapp/interfaces"
+	"myapp/models"
 )
 
 const fileName = "bins.json"
 
-func SaveBin(bin bins.Bin) error {
-	binsList, err := LoadBins()
+// JSONStorage реализует интерфейс Storage для работы с JSON файлами
+type JSONStorage struct{}
+
+// NewJSONStorage создает новый экземпляр JSONStorage
+func NewJSONStorage() interfaces.Storage {
+	return &JSONStorage{}
+}
+
+func (s *JSONStorage) SaveBin(bin models.Bin) error {
+	binsList, err := s.LoadBins()
 	if err != nil {
 		return err
 	}
@@ -24,15 +34,48 @@ func SaveBin(bin bins.Bin) error {
 	return os.WriteFile(filepath.Join(".", fileName), data, 0644)
 }
 
-func LoadBins() ([]bins.Bin, error) {
+func (s *JSONStorage) LoadBins() ([]models.Bin, error) {
 	data, err := os.ReadFile(filepath.Join(".", fileName))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []bins.Bin{}, nil
+			return []models.Bin{}, nil
 		}
 		return nil, err
 	}
-	var binsList []bins.Bin
+	var binsList []models.Bin
 	err = json.Unmarshal(data, &binsList)
 	return binsList, err
+}
+
+// Deprecated: используйте JSONStorage.SaveBin вместо этой функции
+func SaveBin(bin bins.Bin) error {
+	storage := NewJSONStorage()
+	// Конвертируем bins.Bin в models.Bin
+	modelBin := models.Bin{
+		ID:        bin.ID,
+		Name:      bin.Name,
+		Private:   bin.Private,
+		CreatedAt: bin.CreatedAt,
+	}
+	return storage.SaveBin(modelBin)
+}
+
+// Deprecated: используйте JSONStorage.LoadBins вместо этой функции
+func LoadBins() ([]bins.Bin, error) {
+	storage := NewJSONStorage()
+	modelBins, err := storage.LoadBins()
+	if err != nil {
+		return nil, err
+	}
+	// Конвертируем []models.Bin в []bins.Bin
+	var binsList []bins.Bin
+	for _, modelBin := range modelBins {
+		binsList = append(binsList, bins.Bin{
+			ID:        modelBin.ID,
+			Name:      modelBin.Name,
+			Private:   modelBin.Private,
+			CreatedAt: modelBin.CreatedAt,
+		})
+	}
+	return binsList, nil
 }
